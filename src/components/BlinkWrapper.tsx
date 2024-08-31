@@ -11,17 +11,14 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 export default function BlinkWrapper() {
   const actionApiUrl = `${window.location.origin}/fight`;
   const wallet = useWallet();
-  console.log("🚀 ~ BlinkWrapper ~ actionApiUrl:", actionApiUrl);
 
   const { adapter } = useActionSolanaWalletAdapter(
     process.env.NEXT_PUBLIC_RPC_URL!
   );
   const { action } = useAction({ url: actionApiUrl, adapter });
-  console.log("🚀 ~ BlinkWrapper ~ action:", action);
 
   return (
     <div className='blink-container'>
-      <WalletMultiButton />
       {action && (
         <Blink
           action={action}
