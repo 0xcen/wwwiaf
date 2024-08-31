@@ -52,6 +52,9 @@
   .text-balance {
     text-wrap: balance;
   }
+  .bg-gradient-radial {
+    background-image: radial-gradient(var(--tw-gradient-stops));
+  }
 }
 
 /* 
@@ -110,6 +113,7 @@
   --blink-shadow-container: 0px 2px 8px 0px rgba(59, 176, 255, 0.22),
     0px 1px 48px 0px rgba(29, 155, 240, 0.24);
 }
+
 /* 
 html,
 body {
@@ -189,6 +193,10 @@ footer {
   color: white !important;
   border-radius: 0.375rem !important; /* This is equivalent to rounded-md in Tailwind */
   font-weight: bold !important;
+  font-family: inherit !important; /* Use the same font as the rest of the app */
+  text-transform: none !important; /* Remove all-caps transformation if present */
+  font-size: 1rem !important; /* Adjust the font size as needed */
+  padding: 0.5rem 1rem !important; /* Adjust padding as needed */
 }
 
 .wallet-adapter-button:hover {
@@ -197,4 +205,37 @@ footer {
 
 .wallet-adapter-button-trigger {
   background-color: black !important;
+}
+
+/* Style the dropdown menu */
+.wallet-adapter-dropdown {
+  font-family: inherit !important;
+}
+
+.wallet-adapter-dropdown-list {
+  background-color: #1a1a1a !important;
+  border-radius: 0.375rem !important;
+}
+
+.wallet-adapter-dropdown-list-item {
+  font-family: inherit !important;
+  font-size: 1rem !important;
+  color: white !important;
+}
+
+.wallet-adapter-dropdown-list-item:hover {
+  background-color: #2a2a2a !important;
+}
+
+/* Adjust the Blink component to have a transparent background */
+.blink {
+  background-color: rgba(
+    32,
+    35,
+    39,
+    0.8
+  ) !important; /* Slightly transparent background */
+  backdrop-filter: blur(5px); /* Add a slight blur effect */
+  border-radius: 16px; /* Rounded corners */
+  overflow: hidden; /* Ensure the blur doesn't extend beyond the border */
 }

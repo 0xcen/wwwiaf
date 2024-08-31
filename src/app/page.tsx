@@ -9,9 +9,9 @@ const BlinkWrapper = dynamic(() => import("@/components/BlinkWrapper"), {
 
 export default function Home() {
   return (
-    <div className='min-h-screen flex flex-col bg-stone-950'>
+    <div className='min-h-screen overflow-auto flex flex-col bg-stone-950'>
       <nav className='w-full p-4 flex justify-end'>
-        <WalletMultiButton className='!bg-black-500 !text-white !rounded-md !font-bold' />
+        <WalletMultiButton className='wallet-adapter-button' />
       </nav>
       <main className='flex-grow flex flex-col justify-center items-center text-center w-full max-w-5xl px-4 sm:px-6 lg:px-8 mx-auto'>
         <h1 className='text-5xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-stone-600 to-stone-500'>

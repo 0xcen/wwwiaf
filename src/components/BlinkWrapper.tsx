@@ -26,7 +26,10 @@ export default function BlinkWrapper() {
   }, [action]);
 
   return (
-    <div className='blink-container'>
+    <div className='blink-container relative'>
+      <div className='absolute inset-0 -z-10'>
+        <div className='absolute inset-0 bg-gradient-radial from-stone-500/20 to-transparent blur-3xl transform scale-150'></div>
+      </div>
       {isLoading ? (
         <div className='flex justify-center items-center'>
           <div className='animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-stone-500'></div>
