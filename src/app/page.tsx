@@ -1,18 +1,31 @@
-import { supabase } from "@/utils/supabase";
-import FighterForm from "@/components/FighterForm";
+"use client";
 
-export const revalidate = 0;
+import dynamic from "next/dynamic";
 
-async function getItems() {
-  const { data } = await supabase.from("items").select("*");
-  return data;
-}
+const BlinkWrapper = dynamic(() => import("@/components/BlinkWrapper"), {
+  ssr: false,
+});
 
 export default function Home() {
   return (
-    <main className='container mx-auto p-4'>
-      <h1 className='text-2xl font-bold mb-4'>Welcome to the Fighter App</h1>
-      <p>This is the public facing page.</p>
-    </main>
+    <div className='min-h-screen flex flex-col justify-between items-center bg-gray-100 p-4'>
+      <main className='flex-grow flex flex-col justify-center items-center text-center w-full max-w-5xl px-4 sm:px-6 lg:px-8'>
+        <h1 className='text-4xl font-bold mb-4'>
+          Welcome to <span className='text-blue-600'>Matchups.fun</span>
+        </h1>
+
+        <p className='text-xl mb-8'>
+          Put your favorite Crypto Twitter characters head-to-head!
+        </p>
+
+        <div className='max-w-96 w-full'>
+          <BlinkWrapper />
+        </div>
+      </main>
+
+      <footer className='mt-8 text-gray-600'>
+        <p>Who would win? You decide!</p>
+      </footer>
+    </div>
   );
 }

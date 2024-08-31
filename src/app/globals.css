@@ -2,28 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
   }
-}
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  * {
+    @apply box-border;
+  }
+  body {
+    @apply !overflow-x-hidden text-lg font-medium;
+    margin: 0;
+  }
+  body[style] {
+    margin-right: 0 !important;
+  }
+  input,
+  textarea {
+    @apply bg-gray-200 px-4 py-2 text-base font-normal focus:outline-none focus:ring-2 focus:ring-blue-500;
+  }
+
+  h1 {
+    @apply text-4xl font-normal text-gray-700 sm:text-6xl;
+  }
+
+  h2 {
+    @apply text-4xl font-semibold sm:text-6xl;
+  }
+
+  .subheading {
+    @apply block text-lg sm:text-xl;
+  }
+
+  h3 {
+    @apply text-xl;
+  }
+
+  p {
+    @apply text-base leading-normal;
+  }
+
+  label {
+    @apply mb-2 font-medium;
+  }
 }
 
 @layer utilities {
@@ -31,3 +53,132 @@ body {
     text-wrap: balance;
   }
 }
+
+/* 
+    Use .x-dark, .x-light, .dial-light, or .custom classes 
+    .custom - does not contain any colors, radii or shadow
+*/
+.blink {
+  --blink-bg-primary: #202327;
+  --blink-button: #1d9bf0;
+  --blink-button-disabled: #2f3336;
+  --blink-button-hover: #3087da;
+  --blink-button-success: #00ae661a;
+  --blink-icon-error: #ff6565;
+  --blink-icon-error-hover: #ff7a7a;
+  --blink-icon-primary: #6e767d;
+  --blink-icon-primary-hover: #949ca4;
+  --blink-icon-warning: #ffb545;
+  --blink-icon-warning-hover: #ffc875;
+  --blink-input-bg: #202327;
+  --blink-input-stroke: #3d4144;
+  --blink-input-stroke-disabled: #2f3336;
+  --blink-input-stroke-error: #ff6565;
+  --blink-input-stroke-hover: #6e767d;
+  --blink-input-stroke-selected: #1d9bf0;
+  --blink-stroke-error: #ff6565;
+  --blink-stroke-primary: #1d9bf0;
+  --blink-stroke-secondary: #3d4144;
+  --blink-stroke-warning: #ffb545;
+  --blink-text-brand: #35aeff;
+  --blink-text-button: #ffffff;
+  --blink-text-button-disabled: #768088;
+  --blink-text-button-success: #12dc88;
+  --blink-text-error: #ff6565;
+  --blink-text-error-hover: #ff7a7a;
+  --blink-text-input: #ffffff;
+  --blink-text-input-disabled: #566470;
+  --blink-text-input-placeholder: #6e767d;
+  --blink-text-link: #6e767d;
+  --blink-text-link-hover: #949ca4;
+  --blink-text-primary: #ffffff;
+  --blink-text-secondary: #949ca4;
+  --blink-text-success: #12dc88;
+  --blink-text-warning: #ffb545;
+  --blink-text-warning-hover: #ffc875;
+  --blink-transparent-error: #aa00001a;
+  --blink-transparent-grey: #6e767d1a;
+  --blink-transparent-warning: #a966001a;
+
+  --blink-border-radius-rounded-lg: 0.25rem;
+  --blink-border-radius-rounded-xl: 0.5rem;
+  --blink-border-radius-rounded-2xl: 1.125rem;
+  --blink-border-radius-rounded-button: 624.9375rem;
+  --blink-border-radius-rounded-input: 624.9375rem;
+
+  /* box-shadow */
+  --blink-shadow-container: 0px 2px 8px 0px rgba(59, 176, 255, 0.22),
+    0px 1px 48px 0px rgba(29, 155, 240, 0.24);
+}
+/* 
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.container {
+  min-height: 100vh;
+  padding: 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f0f0;
+}
+
+main {
+  padding: 5rem 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.title {
+  margin: 0;
+  line-height: 1.15;
+  font-size: 4rem;
+  text-align: center;
+}
+
+.highlight {
+  color: #0070f3;
+}
+
+.description {
+  text-align: center;
+  line-height: 1.5;
+  font-size: 1.5rem;
+}
+
+.blink-container {
+  margin-top: 2rem;
+}
+
+footer {
+  width: 100%;
+  height: 100px;
+  border-top: 1px solid #eaeaea;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+
+/* .blink.custom {
+  --blink-bg-primary: #ffffff;
+  --blink-button: #0070f3;
+  --blink-button-hover: #0051a8;
+  --blink-text-primary: #333333;
+  --blink-text-secondary: #666666;
+  --blink-border-radius-rounded-xl: 0.5rem;
+} */
