@@ -5,6 +5,7 @@ import {
 } from "@solana/actions";
 import {
   Connection,
+  LAMPORTS_PER_SOL,
   PublicKey,
   SystemProgram,
   Transaction,

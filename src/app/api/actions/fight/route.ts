@@ -4,6 +4,7 @@ import {
   createPostResponse,
 } from "@solana/actions";
 import {
+  ComputeBudgetProgram,
   Connection,
   PublicKey,
   SystemProgram,
@@ -17,27 +18,30 @@ const WWWIAF_PUBKEY = new PublicKey(
 
 export async function GET(req: Request, res: Response) {
   const url = new URL(req.url);
-  const username1 = url.searchParams.get("1");
-  const username2 = url.searchParams.get("2");
-
-  const matchId = "30ouseoe"; //todo: fetch from db
 
   try {
+    // Fetch fighters and match from the /api/fighters endpoint
+    const fightersResponse = await fetch(`${url.origin}/api/fighters`);
+    if (!fightersResponse.ok) {
+      throw new Error("Failed to fetch fighters");
+    }
+    const { fighter1, fighter2, match } = await fightersResponse.json();
+
     const actionGetResp: ActionGetResponse = {
-      icon: `${url.origin}/api/og/matchup?username1=${username1}&username2=${username2}`, // create OG image
-      title: `Who would win i a fight? ${username1} vs ${username2}`,
+      icon: `${url.origin}/api/og/matchup?username1=${fighter1.username}&username2=${fighter2.username}`,
+      title: `Who would win in a fight? ${fighter1.username} vs ${fighter2.username}`,
       description:
         "Vote for who would win in a fight, pay to reveal what everyone else thinks.",
       label: "Vote",
       links: {
         actions: [
           {
-            label: `Vote ${username1}`,
-            href: `${url.pathname}?vote=1&matchId=${matchId}`,
+            label: `Vote ${fighter1.username}`,
+            href: `${url.pathname}?vote=1&matchId=${match.id}`,
           },
           {
-            label: `Vote ${username2}`,
-            href: `${url.pathname}?vote=2&matchId=${matchId}`,
+            label: `Vote ${fighter2.username}`,
+            href: `${url.pathname}?vote=2&matchId=${match.id}`,
           },
         ],
       },
@@ -90,6 +94,15 @@ export const POST = async (request: Request) => {
       feePayer: payer,
     });
 
+    transaction.add(
+      ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 10000,
+      }),
+      ComputeBudgetProgram.setComputeUnitLimit({
+        units: 500,
+      })
+    );
+
     // Add an instruction to execute
     transaction.add(
       SystemProgram.transfer({
@@ -105,7 +118,7 @@ export const POST = async (request: Request) => {
         links: {
           next: {
             action: {
-              icon: "https://fav.farm/💳", // create OG image
+              icon: `${url.origin}/api/og/paywall?username1=${username1}&username2=${username2}`, // create OG image
               type: "action",
               title: `Who would win i a fight? ${username1} vs ${username2}`,
               description:

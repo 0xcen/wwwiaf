@@ -21,21 +21,62 @@ export async function POST(request: Request) {
 
 // READ
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
+  try {
+    // Fetch all fighters
+    const { data: fighters, error: fightersError } = await supabase
+      .from("fighters")
+      .select("*");
 
-  let query = supabase.from("fighters").select("*");
-  if (id) query = query.eq("id", id);
+    if (fightersError) throw fightersError;
+    if (!fighters || fighters.length < 2) {
+      return NextResponse.json(
+        { error: "Not enough fighters in the database" },
+        { status: 400 }
+      );
+    }
 
-  const { data, error } = await query;
+    // Randomly select two fighters
+    const shuffled = fighters.sort(() => 0.5 - Math.random());
+    const [fighter1, fighter2] = shuffled.slice(0, 2);
 
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    let match;
 
-  const ogImageUrl = `${
-    process.env.NEXT_PUBLIC_BASE_URL
-  }/api/og?username=${encodeURIComponent(data[0].username)}`;
-  return NextResponse.json({ ...data, ogImageUrl } as Fighter[]);
+    // Check if a match exists
+    const { data: existingMatch, error: matchError } = await supabase
+      .from("matches")
+      .select("*")
+      .or(`fighter1_id.eq.${fighter1.id},fighter1_id.eq.${fighter2.id}`)
+      .or(`fighter2_id.eq.${fighter1.id},fighter2_id.eq.${fighter2.id}`)
+      .single();
+
+    if (matchError && matchError.code !== "PGRST116") throw matchError;
+
+    if (!existingMatch) {
+      // Create a new match
+      const { data: newMatch, error: createError } = await supabase
+        .from("matches")
+        .insert({ fighter1_id: fighter1.id, fighter2_id: fighter2.id })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      match = newMatch;
+    } else {
+      match = existingMatch;
+    }
+
+    return NextResponse.json({
+      fighter1,
+      fighter2,
+      match,
+    });
+  } catch (error) {
+    console.error("Error in GET /api/fighters:", error);
+    return NextResponse.json(
+      { error: "An error occurred while processing your request" },
+      { status: 500 }
+    );
+  }
 }
 
 // UPDATE

@@ -15,25 +15,57 @@ const WWWIAF_PUBKEY = new PublicKey(
   "5FxmqtfPMwx5rUFvbVwFTWjdDpSbLudP2R9VspFiyWTQ"
 );
 
+export async function GET(req: Request, res: Response) {
+  const url = new URL(req.url);
+  const username1 = url.searchParams.get("1");
+  const username2 = url.searchParams.get("2");
+  const matchId = "30ouseoe"; //todo: fetch from db
+  try {
+    const actionGetResp: ActionGetResponse = {
+      icon: "https://fav.farm/🔥", // create OG image
+      title: `Do you want to know who would win?`,
+      description: "Pay to reveal what everyone else thinks.",
+      label: "Reveal",
+      links: {
+        actions: [
+          {
+            label: `Random`,
+            href: `${url.pathname}?vote=1&matchId=${matchId}`,
+          },
+          {
+            label: `random`,
+            href: `${url.pathname}?vote=2&matchId=${matchId}`,
+          },
+        ],
+      },
+    };
+    return NextResponse.json(actionGetResp, {
+      headers: ACTIONS_CORS_HEADERS,
+    });
+  } catch (err) {
+    let message = "An unknown error occurred";
+    if (err instanceof Error) {
+      message = err.message;
+    } else if (typeof err === "string") {
+      message = err;
+    }
+    return new NextResponse(message, {
+      headers: ACTIONS_CORS_HEADERS,
+      status: 500,
+    });
+  }
+}
+
+export const OPTIONS = GET;
+
 export const POST = async (request: Request) => {
   try {
     const url = new URL(request.url);
-    const vote = url.searchParams.get("vote");
-    const matchId = url.searchParams.get("matchId");
-
-    const username1 = url.searchParams.get("1");
-    const username2 = url.searchParams.get("2");
+    // const matchId = url.searchParams.get("matchId");
 
     const requestBody = await request.json();
 
     const payer = new PublicKey(requestBody.account);
-
-    if (!vote) {
-      return new NextResponse("Invalid vote", {
-        headers: ACTIONS_CORS_HEADERS,
-        status: 400,
-      });
-    }
 
     const connection = new Connection(process.env.RPC_URL!);
 
@@ -58,24 +90,12 @@ export const POST = async (request: Request) => {
         links: {
           next: {
             action: {
-              icon: "https://fav.farm/💳", // create OG image
+              icon: "https://fav.farm/📊", // create OG image
               type: "action",
-              title: `Who would win i a fight? ${username1} vs ${username2}`,
-              description:
-                "Vote for who would win in a fight, pay to reveal what everyone else thinks.",
-              label: "Vote",
-              links: {
-                actions: [
-                  {
-                    label: `0.01 SOL`,
-                    href: `${url.hostname}/api/actions/paywall?matchId=${matchId}`,
-                  },
-                  {
-                    label: `100 SEND`,
-                    href: `${url.hostname}/api/actions/paywall?matchId=${matchId}`,
-                  },
-                ],
-              },
+              title: `x wins`,
+              description: "Fun!",
+              label: `Fun!`,
+              disabled: true,
             },
             type: "inline",
           },
