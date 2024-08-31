@@ -15,11 +15,11 @@ export default function Home() {
       </nav>
       <main className='flex-grow flex flex-col justify-center items-center text-center w-full max-w-5xl px-4 sm:px-6 lg:px-8 mx-auto'>
         <h1 className='text-5xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-stone-600 to-stone-500'>
-          Welcome to <span className='text-stone-500'>Matchups.fun</span>
+          Who would win in a fight?
         </h1>
 
         <p className='text-2xl mb-8 font-bold text-gray-300'>
-          Put your favorite Crypto Twitter characters head-to-head!
+          CT&apos;s main characters head-to-head!
         </p>
 
         <div className='max-w-[450px] w-full'>
