@@ -12,6 +12,7 @@ import {
 } from "@solana/web3.js";
 import { NextResponse } from "next/server";
 import { BlinksightsClient } from "blinksights-sdk";
+import { getPrice } from "@/utils/pricing";
 
 const WWWIAF_PUBKEY = new PublicKey(
   "5FxmqtfPMwx5rUFvbVwFTWjdDpSbLudP2R9VspFiyWTQ"
@@ -35,7 +36,7 @@ export async function GET(req: Request, res: Response) {
         icon: `${url.origin}/api/og/matchup?f1=${fighter1.username}&f2=${fighter2.username}`,
         title: `Who would win in a fight? ${fighter1.username} vs ${fighter2.username}`,
         description:
-          "Vote for who would win in a fight, pay to reveal what everyone else thinks.",
+          "Vote for who would win in a fight, pay to reveal what everyone else thinks. You can pay with SOL or SEND.",
         label: "Vote",
         links: {
           actions: [
@@ -112,16 +113,6 @@ export const POST = async (request: Request) => {
       })
     );
 
-    const blinksightsActionIdentityInstruction =
-      await blinksights.getActionIdentityInstructionV2(
-        payer.toString(),
-        request.url
-      );
-
-    if (blinksightsActionIdentityInstruction) {
-      transaction.add(blinksightsActionIdentityInstruction);
-    }
-
     // Add an instruction to execute
     transaction.add(
       SystemProgram.transfer({
@@ -131,6 +122,8 @@ export const POST = async (request: Request) => {
       })
     );
 
+    const price = getPrice();
+
     const payload = await createPostResponse({
       fields: {
         transaction,
@@ -139,18 +132,20 @@ export const POST = async (request: Request) => {
             action: {
               icon: `${url.origin}/api/og/paywall?f1=${f1}&f2=${f2}&matchId=${matchId}&vote=${vote}`, // create OG image
               type: "action",
-              title: `You voted for ${f1}, see what everyone else thinks!`,
+              title: `You voted for ${
+                vote === "1" ? f1 : f2
+              }, see what everyone else thinks!`,
               description: "Pay to reveal what everyone else thinks.",
               label: "Reveal",
               links: {
                 actions: [
                   {
-                    label: `0.01 SOL`,
-                    href: `/api/actions/paywall?vote=${vote}&matchId=${matchId}&f1=${f1}&f2=${f2}`,
+                    label: `${price.sol} SOL`,
+                    href: `/api/actions/paywall?vote=${vote}&matchId=${matchId}&f1=${f1}&f2=${f2}&asset=SOL&price=${price.sol}`,
                   },
                   {
-                    label: `100 SEND`,
-                    href: `/api/actions/paywall?vote=${vote}&matchId=${matchId}&f1=${f1}&f2=${f2}`,
+                    label: `${price.send} SEND`,
+                    href: `/api/actions/paywall?vote=${vote}&matchId=${matchId}&f1=${f1}&f2=${f2}&asset=SEND&price=${price.send}`,
                   },
                 ],
               },

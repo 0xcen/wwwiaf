@@ -48,52 +48,7 @@ export const OPTIONS = GET;
 
 export const POST = async (request: Request) => {
   try {
-    const url = new URL(request.url);
-    // const matchId = url.searchParams.get("matchId");
-
-    const requestBody = await request.json();
-
-    const payer = new PublicKey(requestBody.account);
-
-    try {
-      await blinksights.trackActionV2(requestBody.account, request.url);
-    } catch (err) {
-      console.log(err);
-    }
-
-    const connection = new Connection(process.env.RPC_URL!);
-
-    // Create Simple Transaction
-    const transaction = new Transaction({
-      recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
-      feePayer: payer,
-    });
-
-    const blinksightsActionIdentityInstruction =
-      await blinksights.getActionIdentityInstructionV2(
-        payer.toString(),
-        request.url
-      );
-
-    if (blinksightsActionIdentityInstruction) {
-      transaction.add(blinksightsActionIdentityInstruction);
-    }
-
-    // Add an instruction to execute
-    transaction.add(
-      SystemProgram.transfer({
-        fromPubkey: payer,
-        toPubkey: WWWIAF_PUBKEY,
-        lamports: 1000,
-      })
-    );
-
-    const payload = await createPostResponse({
-      fields: {
-        transaction,
-      },
-    });
-    return NextResponse.json(payload, {
+    return NextResponse.json(undefined, {
       headers: ACTIONS_CORS_HEADERS,
     });
   } catch (err) {

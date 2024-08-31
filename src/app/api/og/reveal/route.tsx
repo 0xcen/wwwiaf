@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
 
     if (error) throw new Error(error.message);
 
-    const [fighter1, fighter2] = fighters;
+    const fighter1 = fighters.find(fighter => fighter.username === f1);
+    const fighter2 = fighters.find(fighter => fighter.username === f2);
 
     // Check if a match exists
     const { data: existingMatch, error: matchError } = await supabase
@@ -51,8 +52,10 @@ export async function GET(req: NextRequest) {
       totalVotes > 0 ? Math.round((fighter1Votes / totalVotes) * 100) : 50;
     const fighter2Percentage =
       totalVotes > 0 ? Math.round((fighter2Votes / totalVotes) * 100) : 50;
-    const loser = fighter1Votes < fighter2Votes ? fighter1 : fighter2;
-    const winner = loser === fighter1 ? fighter2 : fighter1;
+
+    // Update this part
+    const winner = fighter1Votes > fighter2Votes ? fighter1 : fighter2;
+    const loser = winner === fighter1 ? fighter2 : fighter1;
 
     return new ImageResponse(
       (
@@ -157,7 +160,7 @@ export async function GET(req: NextRequest) {
               top: 0,
               bottom: 0,
               transform: "translateX(-50%)",
-              width: "30%",
+              width: "35%",
               zIndex: 20,
               justifyContent: "center",
               alignItems: "center",
@@ -190,7 +193,7 @@ export async function GET(req: NextRequest) {
               alignItems: "center",
               zIndex: 10,
             }}>
-            Results: {totalVotes} votes
+            Matchup votes: {totalVotes}
           </div>
         </div>
       ),

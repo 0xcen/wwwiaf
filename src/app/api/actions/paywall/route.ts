@@ -12,6 +12,13 @@ import {
 } from "@solana/web3.js";
 import { NextResponse } from "next/server";
 import { BlinksightsClient } from "blinksights-sdk";
+import {
+  TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountInstruction,
+  createTransferInstruction,
+  getAssociatedTokenAddress,
+  getMint,
+} from "@solana/spl-token";
 
 const WWWIAF_PUBKEY = new PublicKey(
   "5FxmqtfPMwx5rUFvbVwFTWjdDpSbLudP2R9VspFiyWTQ"
@@ -23,11 +30,11 @@ export async function GET(req: Request, res: Response) {
   try {
     // this whole block doesn't matter because in action chaining it gets added in the previous action
     const actionGetResp: ActionGetResponse = {
-      icon: "", // create OG image
+      icon: "https://placehold.co/600x400", // create OG image
       type: "action",
       title: ``,
       description: "",
-      label: "",
+      label: "Get",
     };
 
     return NextResponse.json(actionGetResp, {
@@ -56,13 +63,22 @@ export const POST = async (request: Request) => {
     const f1 = url.searchParams.get("f1");
     const f2 = url.searchParams.get("f2");
     const vote = url.searchParams.get("vote");
+    const asset = url.searchParams.get("asset");
+    const price = url.searchParams.get("price");
 
-    if (!vote || !matchId) {
-      throw new Error("Vote and matchId are required");
+    if (!vote || !matchId || !asset || !price) {
+      throw new Error("Vote, matchId, asset, and price are required");
     }
 
-    const match = await fetch(`/api/matches?id=${matchId}`);
-    const matchData = await match.json();
+    const { data: matchData, error } = await supabase
+      .from("matches")
+      .select("*")
+      .eq("id", matchId)
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
     const requestBody = await request.json();
     const payer = new PublicKey(requestBody.account);
 
@@ -74,33 +90,69 @@ export const POST = async (request: Request) => {
 
     const connection = new Connection(process.env.RPC_URL!);
 
-    // Create Simple Transaction
+    // Create Transaction
     const transaction = new Transaction({
       recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
       feePayer: payer,
     });
 
-    const blinksightsActionIdentityInstruction =
-      await blinksights.getActionIdentityInstructionV2(
-        payer.toString(),
-        request.url
-      );
-
-    if (blinksightsActionIdentityInstruction) {
-      transaction.add(blinksightsActionIdentityInstruction);
-    }
-
     const correctVote =
       vote === "1" ? matchData.votes_fighter1 : matchData.votes_fighter2;
 
-    // Add an instruction to execute
-    transaction.add(
-      SystemProgram.transfer({
-        fromPubkey: payer,
-        toPubkey: WWWIAF_PUBKEY,
-        lamports: 1000,
-      })
-    );
+    let amount: bigint;
+
+    if (asset === "SOL") {
+      // Convert price to lamports (1 SOL = 10^9 lamports)
+      amount = BigInt(parseFloat(price) * 1e9);
+
+      // Add SOL transfer instruction
+      transaction.add(
+        SystemProgram.transfer({
+          fromPubkey: payer,
+          toPubkey: WWWIAF_PUBKEY,
+          lamports: amount,
+        })
+      );
+    } else {
+      // Handle token transfer
+      const mint = new PublicKey("SENDdRQtYMWaQrBroBrJ2Q53fgVuq95CV9UPGEvpCxa");
+      const mintInfo = await getMint(connection, mint);
+
+      // Convert price to token amount based on decimals
+      amount = BigInt(Math.round(parseFloat(price) * 10 ** mintInfo.decimals));
+
+      const destinationATA = await getAssociatedTokenAddress(
+        mint,
+        WWWIAF_PUBKEY
+      );
+
+      // Check if the destination ATA exists
+      const destinationAccount = await connection.getAccountInfo(
+        destinationATA
+      );
+
+      if (!destinationAccount) {
+        // If the ATA doesn't exist, create it
+        transaction.add(
+          createAssociatedTokenAccountInstruction(
+            payer,
+            destinationATA,
+            WWWIAF_PUBKEY,
+            mint
+          )
+        );
+      }
+
+      // Add token transfer instruction
+      transaction.add(
+        createTransferInstruction(
+          await getAssociatedTokenAddress(mint, payer),
+          destinationATA,
+          payer,
+          amount
+        )
+      );
+    }
 
     const payload = await createPostResponse({
       fields: {
@@ -109,13 +161,12 @@ export const POST = async (request: Request) => {
           next: {
             action: {
               icon: `${url.origin}/api/og/reveal?matchId=${matchId}&f1=${f1}&f2=${f2}`,
-              type: "action",
-              title: `${correctVote} others also thought ${
-                vote === "1" ? f1 : f2
-              } would win!`,
-              description: "Play again for a new matchup!",
-              label: "Play again",
-              disabled: true,
+              type: "completed",
+              title: `${
+                correctVote === 1 ? "1 other person" : correctVote + " others"
+              } also thought ${vote === "1" ? f1 : f2} would win!`,
+              description: "🔄 Refresh to get a fresh matchup!",
+              label: "Refresh to play again!",
             },
 
             type: "inline",
@@ -127,6 +178,7 @@ export const POST = async (request: Request) => {
       headers: ACTIONS_CORS_HEADERS,
     });
   } catch (err) {
+    console.log("🚀 ~ POST ~ err:", err);
     let message = "An unknown error occurred";
     if (err instanceof Error) {
       message = err.message;
