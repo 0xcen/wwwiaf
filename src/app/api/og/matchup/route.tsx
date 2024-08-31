@@ -13,10 +13,10 @@ const supabase = createClient(
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const username1 = searchParams.get("username1");
-    const username2 = searchParams.get("username2");
+    const f1 = searchParams.get("f1");
+    const f2 = searchParams.get("f2");
 
-    if (!username1 || !username2) {
+    if (!f1 || !f2) {
       throw new Error("Both usernames are required");
     }
 
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     const { data: fighters, error } = await supabase
       .from("fighters")
       .select("username, image")
-      .in("username", [username1, username2]);
+      .in("username", [f1, f2]);
 
     if (error) throw new Error(error.message);
 
@@ -32,8 +32,8 @@ export async function GET(req: NextRequest) {
       throw new Error("Could not find both fighters");
     }
 
-    const fighter1 = fighters.find(f => f.username === username1)!;
-    const fighter2 = fighters.find(f => f.username === username2)!;
+    const fighter1 = fighters.find(f => f.username === f1)!;
+    const fighter2 = fighters.find(f => f.username === f2)!;
 
     return new ImageResponse(
       (

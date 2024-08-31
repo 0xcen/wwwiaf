@@ -11,10 +11,13 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import { NextResponse } from "next/server";
+import { BlinksightsClient } from "blinksights-sdk";
 
 const WWWIAF_PUBKEY = new PublicKey(
   "5FxmqtfPMwx5rUFvbVwFTWjdDpSbLudP2R9VspFiyWTQ"
 );
+
+const blinksights = new BlinksightsClient(process.env.BLINKSIGHTS_API_KEY!);
 
 export async function GET(req: Request, res: Response) {
   const url = new URL(req.url);
@@ -27,25 +30,26 @@ export async function GET(req: Request, res: Response) {
     }
     const { fighter1, fighter2, match } = await fightersResponse.json();
 
-    const actionGetResp: ActionGetResponse = {
-      icon: `${url.origin}/api/og/matchup?username1=${fighter1.username}&username2=${fighter2.username}`,
-      title: `Who would win in a fight? ${fighter1.username} vs ${fighter2.username}`,
-      description:
-        "Vote for who would win in a fight, pay to reveal what everyone else thinks.",
-      label: "Vote",
-      links: {
-        actions: [
-          {
-            label: `Vote ${fighter1.username}`,
-            href: `${url.pathname}?vote=1&matchId=${match.id}`,
-          },
-          {
-            label: `Vote ${fighter2.username}`,
-            href: `${url.pathname}?vote=2&matchId=${match.id}`,
-          },
-        ],
-      },
-    };
+    const actionGetResp: ActionGetResponse =
+      await blinksights.createActionGetResponseV2(req.url, {
+        icon: `${url.origin}/api/og/matchup?f1=${fighter1.username}&f2=${fighter2.username}`,
+        title: `Who would win in a fight? ${fighter1.username} vs ${fighter2.username}`,
+        description:
+          "Vote for who would win in a fight, pay to reveal what everyone else thinks.",
+        label: "Vote",
+        links: {
+          actions: [
+            {
+              label: `Vote ${fighter1.username}`,
+              href: `${url.pathname}?vote=1&f1=${fighter1.username}&f2=${fighter2.username}&matchId=${match.id}`,
+            },
+            {
+              label: `Vote ${fighter2.username}`,
+              href: `${url.pathname}?vote=2&f1=${fighter1.username}&f2=${fighter2.username}&matchId=${match.id}`,
+            },
+          ],
+        },
+      });
 
     return NextResponse.json(actionGetResp, {
       headers: ACTIONS_CORS_HEADERS,
@@ -72,12 +76,17 @@ export const POST = async (request: Request) => {
     const vote = url.searchParams.get("vote");
     const matchId = url.searchParams.get("matchId");
 
-    const username1 = url.searchParams.get("1");
-    const username2 = url.searchParams.get("2");
+    const f1 = url.searchParams.get("f1");
+    const f2 = url.searchParams.get("f2");
 
     const requestBody = await request.json();
 
     const payer = new PublicKey(requestBody.account);
+    try {
+      await blinksights.trackActionV2(requestBody.account, request.url);
+    } catch (err) {
+      console.log(err);
+    }
 
     if (!vote) {
       return new NextResponse("Invalid vote", {
@@ -96,12 +105,22 @@ export const POST = async (request: Request) => {
 
     transaction.add(
       ComputeBudgetProgram.setComputeUnitPrice({
-        microLamports: 10000,
+        microLamports: 100000,
       }),
       ComputeBudgetProgram.setComputeUnitLimit({
-        units: 500,
+        units: 1000,
       })
     );
+
+    const blinksightsActionIdentityInstruction =
+      await blinksights.getActionIdentityInstructionV2(
+        payer.toString(),
+        request.url
+      );
+
+    if (blinksightsActionIdentityInstruction) {
+      transaction.add(blinksightsActionIdentityInstruction);
+    }
 
     // Add an instruction to execute
     transaction.add(
@@ -118,21 +137,20 @@ export const POST = async (request: Request) => {
         links: {
           next: {
             action: {
-              icon: `${url.origin}/api/og/paywall?username1=${username1}&username2=${username2}`, // create OG image
+              icon: `${url.origin}/api/og/paywall?f1=${f1}&f2=${f2}&matchId=${matchId}&vote=${vote}`, // create OG image
               type: "action",
-              title: `Who would win i a fight? ${username1} vs ${username2}`,
-              description:
-                "Vote for who would win in a fight, pay to reveal what everyone else thinks.",
-              label: "Vote",
+              title: `You voted for ${f1}, see what everyone else thinks!`,
+              description: "Pay to reveal what everyone else thinks.",
+              label: "Reveal",
               links: {
                 actions: [
                   {
                     label: `0.01 SOL`,
-                    href: `/api/actions/paywall?matchId=${matchId}`,
+                    href: `/api/actions/paywall?vote=${vote}&matchId=${matchId}&f1=${f1}&f2=${f2}`,
                   },
                   {
                     label: `100 SEND`,
-                    href: `/api/actions/paywall?matchId=${matchId}`,
+                    href: `/api/actions/paywall?vote=${vote}&matchId=${matchId}&f1=${f1}&f2=${f2}`,
                   },
                 ],
               },

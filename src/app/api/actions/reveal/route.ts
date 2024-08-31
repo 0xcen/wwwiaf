@@ -10,34 +10,22 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import { NextResponse } from "next/server";
+import { BlinksightsClient } from "blinksights-sdk";
 
 const WWWIAF_PUBKEY = new PublicKey(
   "5FxmqtfPMwx5rUFvbVwFTWjdDpSbLudP2R9VspFiyWTQ"
 );
 
+const blinksights = new BlinksightsClient(process.env.BLINKSIGHTS_API_KEY!);
+
 export async function GET(req: Request, res: Response) {
   const url = new URL(req.url);
-  const username1 = url.searchParams.get("1");
-  const username2 = url.searchParams.get("2");
-  const matchId = "30ouseoe"; //todo: fetch from db
   try {
     const actionGetResp: ActionGetResponse = {
-      icon: "https://fav.farm/🔥", // create OG image
-      title: `Do you want to know who would win?`,
-      description: "Pay to reveal what everyone else thinks.",
-      label: "Reveal",
-      links: {
-        actions: [
-          {
-            label: `Random`,
-            href: `${url.pathname}?vote=1&matchId=${matchId}`,
-          },
-          {
-            label: `random`,
-            href: `${url.pathname}?vote=2&matchId=${matchId}`,
-          },
-        ],
-      },
+      icon: "", // create OG image
+      title: "",
+      description: "",
+      label: "",
     };
     return NextResponse.json(actionGetResp, {
       headers: ACTIONS_CORS_HEADERS,
@@ -67,6 +55,12 @@ export const POST = async (request: Request) => {
 
     const payer = new PublicKey(requestBody.account);
 
+    try {
+      await blinksights.trackActionV2(requestBody.account, request.url);
+    } catch (err) {
+      console.log(err);
+    }
+
     const connection = new Connection(process.env.RPC_URL!);
 
     // Create Simple Transaction
@@ -74,6 +68,16 @@ export const POST = async (request: Request) => {
       recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
       feePayer: payer,
     });
+
+    const blinksightsActionIdentityInstruction =
+      await blinksights.getActionIdentityInstructionV2(
+        payer.toString(),
+        request.url
+      );
+
+    if (blinksightsActionIdentityInstruction) {
+      transaction.add(blinksightsActionIdentityInstruction);
+    }
 
     // Add an instruction to execute
     transaction.add(
@@ -87,19 +91,6 @@ export const POST = async (request: Request) => {
     const payload = await createPostResponse({
       fields: {
         transaction,
-        links: {
-          next: {
-            action: {
-              icon: "https://fav.farm/📊", // create OG image
-              type: "action",
-              title: `x wins`,
-              description: "Fun!",
-              label: `Fun!`,
-              disabled: true,
-            },
-            type: "inline",
-          },
-        },
       },
     });
     return NextResponse.json(payload, {

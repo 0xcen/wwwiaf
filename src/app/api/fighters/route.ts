@@ -39,23 +39,27 @@ export async function GET(request: Request) {
     const shuffled = fighters.sort(() => 0.5 - Math.random());
     const [fighter1, fighter2] = shuffled.slice(0, 2);
 
-    let match;
-
-    // Check if a match exists
+    // Check if a match exists with these fighters in any order
     const { data: existingMatch, error: matchError } = await supabase
       .from("matches")
       .select("*")
-      .or(`fighter1_id.eq.${fighter1.id},fighter1_id.eq.${fighter2.id}`)
-      .or(`fighter2_id.eq.${fighter1.id},fighter2_id.eq.${fighter2.id}`)
+      .or(
+        `and(fighter1_id.eq.${fighter1.id},fighter2_id.eq.${fighter2.id}),and(fighter1_id.eq.${fighter2.id},fighter2_id.eq.${fighter1.id})`
+      )
       .single();
 
     if (matchError && matchError.code !== "PGRST116") throw matchError;
 
+    let match;
+
     if (!existingMatch) {
-      // Create a new match
+      // Create a new match only if no match exists
       const { data: newMatch, error: createError } = await supabase
         .from("matches")
-        .insert({ fighter1_id: fighter1.id, fighter2_id: fighter2.id })
+        .insert({
+          fighter1_id: fighter1.id,
+          fighter2_id: fighter2.id,
+        })
         .select()
         .single();
 

@@ -1,46 +1,58 @@
-import { supabase } from "@/utils/supabase";
 import { ImageResponse } from "@vercel/og";
 import { NextRequest } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "edge";
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const username1 = searchParams.get("username1");
-    const username2 = searchParams.get("username2");
+    const f1 = searchParams.get("f1");
+    const f2 = searchParams.get("f2");
+    const matchId = searchParams.get("matchId");
 
-    if (!username1 || !username2) {
-      throw new Error("Both usernames are required");
+    if (!f1 || !f2 || !matchId) {
+      throw new Error("Both usernames and matchId are required");
     }
 
-    // // Fetch fighter data from the database
-    // const { data: fighters, error } = await supabase
-    //   .from("fighters")
-    //   .select("username, image")
-    //   .in("username", [username1, username2]);
+    // Fetch fighter data from the database
+    const { data: fighters, error } = await supabase
+      .from("fighters")
+      .select("*")
+      .in("username", [f1, f2]);
 
-    // if (error) throw new Error(error.message);
+    if (error) throw new Error(error.message);
 
-    // if (!fighters || fighters.length !== 2) {
-    //   throw new Error("Could not find both fighters");
-    // }
+    const [fighter1, fighter2] = fighters;
 
-    // const fighter1 = fighters.find(f => f.username === username1)!;
-    // const fighter2 = fighters.find(f => f.username === username2)!;
-
-    // Fetch matchup data from the database
-    let { data: matchups, error: matchupError } = await supabase
-      .from("matchups")
-      .select(
-        "*, fighters!matchups_fighter1_fkey(username, image), fighters!matchups_fighter2_fkey(username, image)"
-      )
-      .or(`fighter1.eq.${username1},fighter1.eq.${username2}`)
-      .or(`fighter2.eq.${username1},fighter2.eq.${username2}`)
+    // Check if a match exists
+    const { data: existingMatch, error: matchError } = await supabase
+      .from("matches")
+      .select("*")
+      .eq("id", matchId)
       .single();
 
-    if (matchupError) throw new Error(matchupError.message);
-    if (!matchups) throw new Error("Matchup not found");
+    if (matchError) throw new Error(matchError.message);
+
+    if (!existingMatch) {
+      throw new Error("Could not find match");
+    }
+
+    const fighter1Votes = existingMatch.votes_fighter1 || 0;
+    const fighter2Votes = existingMatch.votes_fighter2 || 0;
+    const totalVotes = fighter1Votes + fighter2Votes;
+    const fighter1Percentage =
+      totalVotes > 0 ? Math.round((fighter1Votes / totalVotes) * 100) : 50;
+    const fighter2Percentage =
+      totalVotes > 0 ? Math.round((fighter2Votes / totalVotes) * 100) : 50;
+    const loser = fighter1Votes < fighter2Votes ? fighter1 : fighter2;
+    const winner = loser === fighter1 ? fighter2 : fighter1;
 
     return new ImageResponse(
       (
@@ -62,17 +74,19 @@ export async function GET(req: NextRequest) {
               overflow: "hidden",
             }}>
             <img
-              src={matchups.fighters.image}
-              alt={matchups.fighters.username}
+              src={fighter1.image}
+              alt={fighter1.username}
               style={{
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
+                filter: fighter1 === loser ? "grayscale(100%)" : "none",
               }}
             />
             <div
               style={{
                 display: "flex",
+                flexDirection: "column",
                 position: "absolute",
                 bottom: 0,
                 left: 0,
@@ -84,9 +98,11 @@ export async function GET(req: NextRequest) {
                 fontWeight: "bold",
                 justifyContent: "center",
                 alignItems: "center",
-                flexDirection: "column",
               }}>
-              <div>{matchups.fighters.username}</div>
+              <div style={{ display: "flex" }}>{fighter1.username}</div>
+              <div style={{ display: "flex", fontSize: "36px" }}>
+                {fighter1Percentage}%
+              </div>
             </div>
           </div>
 
@@ -100,17 +116,19 @@ export async function GET(req: NextRequest) {
               overflow: "hidden",
             }}>
             <img
-              src={matchups.fighters.image}
-              alt={matchups.fighters.username}
+              src={fighter2.image}
+              alt={fighter2.username}
               style={{
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
+                filter: fighter2 === loser ? "grayscale(100%)" : "none",
               }}
             />
             <div
               style={{
                 display: "flex",
+                flexDirection: "column",
                 position: "absolute",
                 bottom: 0,
                 left: 0,
@@ -122,9 +140,11 @@ export async function GET(req: NextRequest) {
                 fontWeight: "bold",
                 justifyContent: "center",
                 alignItems: "center",
-                flexDirection: "column",
               }}>
-              <div>{matchups.fighters.username}</div>
+              <div style={{ display: "flex" }}>{fighter2.username}</div>
+              <div style={{ display: "flex", fontSize: "36px" }}>
+                {fighter2Percentage}%
+              </div>
             </div>
           </div>
 
@@ -170,7 +190,7 @@ export async function GET(req: NextRequest) {
               alignItems: "center",
               zIndex: 10,
             }}>
-            Who would win in a fight?
+            Results: {totalVotes} votes
           </div>
         </div>
       ),

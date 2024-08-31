@@ -1,3 +1,4 @@
+import { supabase } from "@/utils/supabase";
 import {
   ActionGetResponse,
   ACTIONS_CORS_HEADERS,
@@ -5,41 +6,30 @@ import {
 } from "@solana/actions";
 import {
   Connection,
-  LAMPORTS_PER_SOL,
   PublicKey,
   SystemProgram,
   Transaction,
 } from "@solana/web3.js";
 import { NextResponse } from "next/server";
+import { BlinksightsClient } from "blinksights-sdk";
 
 const WWWIAF_PUBKEY = new PublicKey(
   "5FxmqtfPMwx5rUFvbVwFTWjdDpSbLudP2R9VspFiyWTQ"
 );
 
+const blinksights = new BlinksightsClient(process.env.BLINKSIGHTS_API_KEY!);
+
 export async function GET(req: Request, res: Response) {
-  const url = new URL(req.url);
-  const username1 = url.searchParams.get("1");
-  const username2 = url.searchParams.get("2");
-  const matchId = "30ouseoe"; //todo: fetch from db
   try {
+    // this whole block doesn't matter because in action chaining it gets added in the previous action
     const actionGetResp: ActionGetResponse = {
-      icon: "https://fav.farm/🔥", // create OG image
-      title: `Do you want to know who would win?`,
-      description: "Pay to reveal what everyone else thinks.",
-      label: "Reveal",
-      links: {
-        actions: [
-          {
-            label: `Random`,
-            href: `${url.pathname}?vote=1&matchId=${matchId}`,
-          },
-          {
-            label: `random`,
-            href: `${url.pathname}?vote=2&matchId=${matchId}`,
-          },
-        ],
-      },
+      icon: "", // create OG image
+      type: "action",
+      title: ``,
+      description: "",
+      label: "",
     };
+
     return NextResponse.json(actionGetResp, {
       headers: ACTIONS_CORS_HEADERS,
     });
@@ -62,11 +52,25 @@ export const OPTIONS = GET;
 export const POST = async (request: Request) => {
   try {
     const url = new URL(request.url);
-    // const matchId = url.searchParams.get("matchId");
+    const matchId = url.searchParams.get("matchId");
+    const f1 = url.searchParams.get("f1");
+    const f2 = url.searchParams.get("f2");
+    const vote = url.searchParams.get("vote");
 
+    if (!vote || !matchId) {
+      throw new Error("Vote and matchId are required");
+    }
+
+    const match = await fetch(`/api/matches?id=${matchId}`);
+    const matchData = await match.json();
     const requestBody = await request.json();
-
     const payer = new PublicKey(requestBody.account);
+
+    try {
+      await blinksights.trackActionV2(requestBody.account, request.url);
+    } catch (err) {
+      console.log(err);
+    }
 
     const connection = new Connection(process.env.RPC_URL!);
 
@@ -75,6 +79,19 @@ export const POST = async (request: Request) => {
       recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
       feePayer: payer,
     });
+
+    const blinksightsActionIdentityInstruction =
+      await blinksights.getActionIdentityInstructionV2(
+        payer.toString(),
+        request.url
+      );
+
+    if (blinksightsActionIdentityInstruction) {
+      transaction.add(blinksightsActionIdentityInstruction);
+    }
+
+    const correctVote =
+      vote === "1" ? matchData.votes_fighter1 : matchData.votes_fighter2;
 
     // Add an instruction to execute
     transaction.add(
@@ -91,13 +108,16 @@ export const POST = async (request: Request) => {
         links: {
           next: {
             action: {
-              icon: "https://fav.farm/📊", // create OG image
+              icon: `${url.origin}/api/og/reveal?matchId=${matchId}&f1=${f1}&f2=${f2}`,
               type: "action",
-              title: `x wins`,
-              description: "Fun!",
-              label: `Fun!`,
+              title: `${correctVote} others also thought ${
+                vote === "1" ? f1 : f2
+              } would win!`,
+              description: "Play again for a new matchup!",
+              label: "Play again",
               disabled: true,
             },
+
             type: "inline",
           },
         },

@@ -10,13 +10,50 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+const incrementVote = async (vote: string, matchId: string) => {
+  console.log(`Incrementing vote. Vote: ${vote}, MatchId: ${matchId}`);
+
+  // First, get the current match data
+  const { data: match, error: fetchError } = await supabase
+    .from("matches")
+    .select("*")
+    .eq("id", matchId)
+    .single();
+
+  if (fetchError) {
+    console.error("Error fetching match:", fetchError);
+    throw new Error(fetchError.message);
+  }
+
+  // Determine which column to update
+  const updateColumn = vote === "1" ? "votes_fighter1" : "votes_fighter2";
+
+  // Then, increment the appropriate vote count
+  const { data, error } = await supabase
+    .from("matches")
+    .update({ [updateColumn]: match[updateColumn] + 1 })
+    .eq("id", matchId)
+    .select();
+
+  console.log("Update result:", data);
+
+  if (error) {
+    console.error("Error updating vote:", error);
+    throw new Error(error.message);
+  }
+
+  return data;
+};
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const username1 = searchParams.get("username1");
-    const username2 = searchParams.get("username2");
+    const f1 = searchParams.get("f1");
+    const f2 = searchParams.get("f2");
+    const matchId = searchParams.get("matchId");
+    const vote = searchParams.get("vote");
 
-    if (!username1 || !username2) {
+    if (!f1 || !f2 || !matchId || !vote) {
       throw new Error("Both usernames are required");
     }
 
@@ -24,16 +61,19 @@ export async function GET(req: NextRequest) {
     const { data: fighters, error } = await supabase
       .from("fighters")
       .select("username, image")
-      .in("username", [username1, username2]);
+      .in("username", [f1, f2]);
 
     if (error) throw new Error(error.message);
 
+    await incrementVote(vote, matchId);
+
     if (!fighters || fighters.length !== 2) {
+      console.log("Fighters", fighters);
       throw new Error("Could not find both fighters");
     }
 
-    const fighter1 = fighters.find(f => f.username === username1)!;
-    const fighter2 = fighters.find(f => f.username === username2)!;
+    const fighter1 = fighters.find(f => f.username === f1)!;
+    const fighter2 = fighters.find(f => f.username === f2)!;
 
     return new ImageResponse(
       (
@@ -156,12 +196,13 @@ export async function GET(req: NextRequest) {
               background: "rgba(0,0,0,0.7)",
               color: "white",
               fontSize: "64px",
-              fontWeight: "bold",
+              textAlign: "center",
+              fontWeight: "800",
               justifyContent: "center",
               alignItems: "center",
               zIndex: 10,
             }}>
-            Find out who everyone else thinks would win.
+            Find out who everyone else thinks would win!
           </div>
         </div>
       ),
