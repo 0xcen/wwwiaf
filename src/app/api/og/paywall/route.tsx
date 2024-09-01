@@ -33,7 +33,7 @@ const incrementVote = async (vote: string, matchId: string) => {
     .from("matches")
     .update({
       [updateColumn]: match[updateColumn] + 1,
-      lastEngagementDate: new Date().toISOString(), // Update lastEngagementDate
+      last_engagement_date: new Date().toISOString(), // Update lastEngagementDate
     })
     .eq("id", matchId)
     .select();

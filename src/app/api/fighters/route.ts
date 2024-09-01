@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import { Fighter } from "@/types/schema";
 import { supabase } from "@/utils/supabase";
 
+// Constant for the probability of selecting a new fighter
+const NEW_FIGHTER_SELECTION_PROBABILITY = 0.2;
+
 // CREATE
 export async function POST(request: Request) {
   const { username, image } = await request.json();
@@ -35,9 +38,24 @@ export async function GET(request: Request) {
       );
     }
 
-    // Randomly select two fighters
-    const shuffled = fighters.sort(() => 0.5 - Math.random());
-    const [fighter1, fighter2] = shuffled.slice(0, 2);
+    // Separate new fighters (rank = 0) from ranked fighters
+    const newFighters = fighters.filter(f => f.rank === 0);
+    const rankedFighters = fighters.filter(f => f.rank > 0);
+
+    // Select first fighter
+    const fighter1 =
+      Math.random() < NEW_FIGHTER_SELECTION_PROBABILITY &&
+      newFighters.length > 0
+        ? selectRandomFighter(newFighters)
+        : selectFighterByRank(rankedFighters);
+
+    // Select second fighter
+    const remainingFighters = fighters.filter(f => f.id !== fighter1.id);
+    const fighter2 =
+      Math.random() < NEW_FIGHTER_SELECTION_PROBABILITY &&
+      newFighters.length > 1
+        ? selectRandomFighter(remainingFighters.filter(f => f.rank === 0))
+        : selectFighterByRank(remainingFighters);
 
     // Check if a match exists with these fighters in any order
     const { data: existingMatch, error: matchError } = await supabase
@@ -46,6 +64,8 @@ export async function GET(request: Request) {
       .or(
         `and(fighter1_id.eq.${fighter1.id},fighter2_id.eq.${fighter2.id}),and(fighter1_id.eq.${fighter2.id},fighter2_id.eq.${fighter1.id})`
       )
+      .order("rank", { ascending: false }) // Order by match rank
+      .limit(1)
       .single();
 
     if (matchError && matchError.code !== "PGRST116") throw matchError;
@@ -59,6 +79,7 @@ export async function GET(request: Request) {
         .insert({
           fighter1_id: fighter1.id,
           fighter2_id: fighter2.id,
+          rank: 0, // Initial rank for new match
         })
         .select()
         .single();
@@ -81,6 +102,27 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
+}
+
+// Helper function to select a fighter based on rank with some randomness
+function selectFighterByRank(fighters: Fighter[]): Fighter {
+  const totalRank = fighters.reduce((sum, fighter) => sum + fighter.rank, 0);
+  let randomValue = Math.random() * totalRank;
+
+  for (const fighter of fighters) {
+    randomValue -= fighter.rank;
+    if (randomValue <= 0) {
+      return fighter;
+    }
+  }
+
+  // Fallback to random selection if something goes wrong
+  return selectRandomFighter(fighters);
+}
+
+// Helper function to select a random fighter
+function selectRandomFighter(fighters: Fighter[]): Fighter {
+  return fighters[Math.floor(Math.random() * fighters.length)];
 }
 
 // UPDATE

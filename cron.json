@@ -3,7 +3,7 @@
   "jobs": [
     {
       "path": "/api/cron/update-rankings",
-      "schedule": "0 0 * * *"
+      "schedule": "0 * * * *"
     }
   ]
 }

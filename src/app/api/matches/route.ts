@@ -19,17 +19,51 @@ export async function POST(request: Request) {
 
 // READ
 export async function GET() {
+  // Fetch matches with fighter details and ranks
   const { data: matches, error } = await supabase
     .from("matches")
-    .select("*")
-    .order("rank", { ascending: false })
-    .limit(10);
+    .select(
+      `
+      *,
+      fighter1:fighters!fighter1_id(id, username, rank),
+      fighter2:fighters!fighter2_id(id, username, rank)
+    `
+    )
+    .order("rank", { ascending: false }) // Order by match rank first
+    .limit(50); // Fetch more than we need for diversity
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(matches);
+  // Calculate a score for each match based on match rank and fighter ranks
+  const scoredMatches = matches.map(match => ({
+    ...match,
+    score: calculateMatchScore(match),
+  }));
+
+  // Sort matches by score and select top 10
+  const selectedMatches = scoredMatches
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
+
+  return NextResponse.json(selectedMatches);
+}
+
+// Helper function to calculate a score for a match
+function calculateMatchScore(match: any): number {
+  const matchRank = match.rank || 0;
+  const fighter1Rank = match.fighter1?.rank || 0;
+  const fighter2Rank = match.fighter2?.rank || 0;
+
+  // You can adjust these weights to change the importance of each factor
+  const matchRankWeight = 0.5;
+  const fighterRankWeight = 0.25;
+
+  return (
+    matchRank * matchRankWeight +
+    (fighter1Rank + fighter2Rank) * fighterRankWeight
+  );
 }
 
 // UPDATE
