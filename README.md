@@ -34,3 +34,15 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+## Analytics
+
+This project uses Vercel Analytics for pageview tracking. Analytics is automatically enabled in production and staging environments, but disabled in development.
+
+To view analytics data:
+
+1. Go to your Vercel dashboard
+2. Select this project
+3. Navigate to the Analytics tab
+
+Note: Make sure your Vercel account has the Analytics feature enabled.

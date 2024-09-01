@@ -2,6 +2,7 @@ export interface Fighter {
   id: string;
   username: string; // twitter handle
   image: string; // twitter profile image
+  rank: number; // New field
 }
 
 export interface Match {
@@ -10,6 +11,8 @@ export interface Match {
   fighter2_id: string; // relation to fighters table
   votes_fighter1: number;
   votes_fighter2: number;
+  rank: number; // New field
+  lastEngagementDate: Date; // New field
 }
 
 // all votes for a match by adding fighter 1 votes and fighter 2 votes
