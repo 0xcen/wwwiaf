@@ -1,6 +1,7 @@
 import "@dialectlabs/blinks/index.css";
 import "./globals.css";
 import WalletProviderComponent from "@/components/WalletProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata = {
   title: "Matchups.fun - CT Character Battles",
@@ -15,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body>
+        {process.env.NEXT_PUBLIC_VERCEL_ENV !== "development" && <Analytics />}
         <WalletProviderComponent>{children}</WalletProviderComponent>
       </body>
     </html>
