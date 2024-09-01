@@ -23,7 +23,14 @@ export async function updateRankings() {
   // Update match rankings
   for (const match of matches) {
     const newRank = calculateMatchRank(match);
-    await supabase.from("matches").update({ rank: newRank }).eq("id", match.id);
+
+    // If lastEngagementDate is not set, set it to the current date
+    const updateData: any = { rank: newRank };
+    if (!match.lastEngagementDate) {
+      updateData.lastEngagementDate = new Date().toISOString();
+    }
+
+    await supabase.from("matches").update(updateData).eq("id", match.id);
   }
 
   // Update fighter rankings

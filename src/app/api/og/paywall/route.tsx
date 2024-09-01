@@ -28,10 +28,13 @@ const incrementVote = async (vote: string, matchId: string) => {
   // Determine which column to update
   const updateColumn = vote === "1" ? "votes_fighter1" : "votes_fighter2";
 
-  // Then, increment the appropriate vote count
+  // Then, increment the appropriate vote count and update lastEngagementDate
   const { data, error } = await supabase
     .from("matches")
-    .update({ [updateColumn]: match[updateColumn] + 1 })
+    .update({
+      [updateColumn]: match[updateColumn] + 1,
+      lastEngagementDate: new Date().toISOString(), // Update lastEngagementDate
+    })
     .eq("id", matchId)
     .select();
 

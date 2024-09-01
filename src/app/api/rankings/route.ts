@@ -64,7 +64,13 @@ async function updatePaywallRanking(matchId: string) {
   }
 
   const newRank = match.rank + 1; // Increase rank by 1
-  await supabase.from("matches").update({ rank: newRank }).eq("id", matchId);
+  await supabase
+    .from("matches")
+    .update({
+      rank: newRank,
+      lastEngagementDate: new Date().toISOString(), // Update lastEngagementDate
+    })
+    .eq("id", matchId);
 
   // Update fighters' ranks
   await updateFighterRank(match.fighter1_id, 0.5);
@@ -84,7 +90,13 @@ async function updateFighterRanking(matchId: string) {
   }
 
   const newRank = Math.max(0, match.rank - 0.5); // Decrease rank by 0.5, but not below 0
-  await supabase.from("matches").update({ rank: newRank }).eq("id", matchId);
+  await supabase
+    .from("matches")
+    .update({
+      rank: newRank,
+      lastEngagementDate: new Date().toISOString(), // Update lastEngagementDate
+    })
+    .eq("id", matchId);
 }
 
 async function updateFighterRank(fighterId: string, rankIncrease: number) {
