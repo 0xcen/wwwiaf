@@ -1,3 +1,4 @@
+import { getPrice } from "@/utils/pricing";
 import {
   ActionGetResponse,
   ACTIONS_CORS_HEADERS,
@@ -10,9 +11,8 @@ import {
   SystemProgram,
   Transaction,
 } from "@solana/web3.js";
-import { NextResponse } from "next/server";
 import { BlinksightsClient } from "blinksights-sdk";
-import { getPrice } from "@/utils/pricing";
+import { NextResponse } from "next/server";
 
 const WWWIAF_PUBKEY = new PublicKey(
   "5FxmqtfPMwx5rUFvbVwFTWjdDpSbLudP2R9VspFiyWTQ"

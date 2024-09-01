@@ -18,18 +18,18 @@ export async function POST(request: Request) {
 }
 
 // READ
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
+export async function GET() {
+  const { data: matches, error } = await supabase
+    .from("matches")
+    .select("*")
+    .order("rank", { ascending: false })
+    .limit(10);
 
-  let query = supabase.from("matches").select("*");
-  if (id) query = query.eq("id", id);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
-  const { data, error } = await query;
-
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json(data as Match[]);
+  return NextResponse.json(matches);
 }
 
 // UPDATE

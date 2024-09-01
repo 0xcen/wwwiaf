@@ -3,6 +3,9 @@ import "./globals.css";
 import WalletProviderComponent from "@/components/WalletProvider";
 import { Analytics } from "@vercel/analytics/next";
 
+// Remove this line:
+// import "../jobs/updateRankings";
+
 export const metadata = {
   title: "Matchups.fun - CT Character Battles",
   description: "Put your favorite Crypto Twitter characters head-to-head!",
