@@ -22,13 +22,23 @@ const blinksights = new BlinksightsClient(process.env.BLINKSIGHTS_API_KEY!);
 
 export async function GET(req: Request, res: Response) {
   const url = new URL(req.url);
+  const fighter1 = url.searchParams.get("fighter1");
+  const fighter2 = url.searchParams.get("fighter2");
+
+  let actionUrl = `${url.origin}/api/actions/fight`;
+
+  if (fighter1 && fighter2) {
+    actionUrl += `?fighter1=${fighter1}&fighter2=${fighter2}`;
+  }
 
   try {
     // Fetch fighters and match from the /api/fighters endpoint
-    const fightersResponse = await fetch(`${url.origin}/api/fighters`);
+    const fightersResponse = await fetch(actionUrl);
+
     if (!fightersResponse.ok) {
       throw new Error("Failed to fetch fighters");
     }
+
     const { fighter1, fighter2, match } = await fightersResponse.json();
 
     const actionGetResp: ActionGetResponse =

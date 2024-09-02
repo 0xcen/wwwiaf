@@ -8,10 +8,19 @@ import { useState, useEffect } from "react";
 
 // You may need to import this in your global CSS file
 import "@solana/wallet-adapter-react-ui/styles.css";
+import { useSearchParams } from "next/navigation";
 
 export default function BlinkWrapper() {
-  const actionApiUrl = `${window.location.origin}/fight`;
-  const wallet = useWallet();
+  const searchParams = useSearchParams();
+  console.log("🚀 ~ BlinkWrapper ~ searchParams:", searchParams);
+  const fighter1 = searchParams.get("fighter1");
+  const fighter2 = searchParams.get("fighter2");
+
+  let actionApiUrl = `${window.location.origin}/fight`;
+  if (fighter1 && fighter2) {
+    actionApiUrl += `?fighter1=${fighter1}&fighter2=${fighter2}`;
+  }
+  console.log("🚀 ~ BlinkWrapper ~ actionApiUrl:", actionApiUrl);
   const [isLoading, setIsLoading] = useState(true);
 
   const { adapter } = useActionSolanaWalletAdapter(
@@ -37,8 +46,8 @@ export default function BlinkWrapper() {
       ) : action ? (
         <Blink
           action={action}
-          websiteText='Matchups.fun'
-          stylePreset='custom'
+          websiteText='matchups.fun'
+          stylePreset='x-dark'
         />
       ) : (
         <div className='text-stone-500'>

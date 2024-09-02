@@ -25,6 +25,47 @@ export async function POST(request: Request) {
 // READ
 export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const fighter1Username = searchParams.get("fighter1");
+    const fighter2Username = searchParams.get("fighter2");
+
+    if (fighter1Username && fighter2Username) {
+      // Fetch specific fighters by username
+      const { data: fighters, error } = await supabase
+        .from("fighters")
+        .select("*")
+        .in("username", [fighter1Username, fighter2Username]);
+
+      if (error) throw error;
+      if (!fighters || fighters.length !== 2) {
+        return NextResponse.json(
+          { error: "One or both fighters not found" },
+          { status: 404 }
+        );
+      }
+
+      const [fighter1, fighter2] = fighters;
+
+      // Check if a match exists with these fighters in any order
+      const { data: match, error: matchError } = await supabase
+        .from("matches")
+        .select("*")
+        .or(
+          `and(fighter1_id.eq.${fighter1.id},fighter2_id.eq.${fighter2.id}),and(fighter1_id.eq.${fighter2.id},fighter2_id.eq.${fighter1.id})`
+        )
+        .order("rank", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (matchError && matchError.code !== "PGRST116") throw matchError;
+
+      return NextResponse.json({
+        fighter1,
+        fighter2,
+        match: match || null,
+      });
+    }
+
     // Fetch all fighters
     const { data: fighters, error: fightersError } = await supabase
       .from("fighters")
