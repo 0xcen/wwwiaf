@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { ViewToggle } from "@/components/ViewToggle";
 import { DebatesView } from "@/components/DebatesView";
@@ -36,7 +36,9 @@ export default function Home() {
               Cast a vote on who you think will win, and see what everyone else
               thinks.
             </p>
-            <DebatesView />
+            <Suspense fallback={<></>}>
+              <DebatesView />
+            </Suspense>
           </>
         ) : (
           <>
@@ -47,7 +49,9 @@ export default function Home() {
               CT&apos;s main characters head-to-head!
             </p>
             <div className='max-w-[450px] w-full'>
-              <MainView />
+              <Suspense fallback={<></>}>
+                <MainView />
+              </Suspense>
             </div>
           </>
         )}
