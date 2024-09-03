@@ -1,10 +1,8 @@
 import "@dialectlabs/blinks/index.css";
+import "@solana/wallet-adapter-react-ui/styles.css";
 import "./globals.css";
 import WalletProviderComponent from "@/components/WalletProvider";
 import { Analytics } from "@vercel/analytics/next";
-
-// Remove this line:
-// import "../jobs/updateRankings";
 
 export const metadata = {
   title: "Matchups.fun - CT Character Battles",
@@ -18,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang='en'>
-      <body>
+      <body className='dark'>
         {process.env.NEXT_PUBLIC_VERCEL_ENV !== "development" && <Analytics />}
         <WalletProviderComponent>{children}</WalletProviderComponent>
       </body>

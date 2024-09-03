@@ -4,8 +4,8 @@ export const GET = async () => {
   const payload: ActionsJson = {
     rules: [
       {
-        pathPattern: "/*",
-        apiPath: "/api/actions/*",
+        pathPattern: "/**",
+        apiPath: "/api/actions/**",
       },
     ],
   };

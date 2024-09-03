@@ -27,7 +27,9 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const fighter1Username = searchParams.get("fighter1");
+    console.log("🚀 ~ GET ~ fighter1Username:", fighter1Username);
     const fighter2Username = searchParams.get("fighter2");
+    console.log("🚀 ~ GET ~ fighter2Username:", fighter2Username);
 
     if (fighter1Username && fighter2Username) {
       // Fetch specific fighters by username

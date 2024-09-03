@@ -13,6 +13,10 @@ import {
 } from "@solana/web3.js";
 import { BlinksightsClient } from "blinksights-sdk";
 import { NextResponse } from "next/server";
+import { getFighters } from "@/utils/fighters"; // You'll need to create this utility function
+
+// Remove the logger import
+// import { logger } from "@/utils/logger";
 
 const WWWIAF_PUBKEY = new PublicKey(
   "5FxmqtfPMwx5rUFvbVwFTWjdDpSbLudP2R9VspFiyWTQ"
@@ -22,25 +26,23 @@ const blinksights = new BlinksightsClient(process.env.BLINKSIGHTS_API_KEY!);
 
 export async function GET(req: Request, res: Response) {
   const url = new URL(req.url);
-  const fighter1 = url.searchParams.get("fighter1");
-  const fighter2 = url.searchParams.get("fighter2");
-
-  let actionUrl = `${url.origin}/api/actions/fight`;
-
-  if (fighter1 && fighter2) {
-    actionUrl += `?fighter1=${fighter1}&fighter2=${fighter2}`;
-  }
+  const fighter1Param = url.searchParams.get("fighter1");
+  const fighter2Param = url.searchParams.get("fighter2");
 
   try {
-    // Fetch fighters and match from the /api/fighters endpoint
-    const fightersResponse = await fetch(actionUrl);
+    let fetchUrl = `${url.origin}/api/fighters`;
 
-    if (!fightersResponse.ok) {
-      throw new Error("Failed to fetch fighters");
+    if (fighter1Param && fighter2Param) {
+      fetchUrl += `?fighter1=${fighter1Param}&fighter2=${fighter2Param}`;
     }
 
-    const { fighter1, fighter2, match } = await fightersResponse.json();
+    let { fighter1, fighter2, match } = await fetch(fetchUrl).then(res =>
+      res.json()
+    );
 
+    console.log(
+      `Creating action get response for fighters: ${fighter1.username} vs ${fighter2.username}`
+    );
     const actionGetResp: ActionGetResponse =
       await blinksights.createActionGetResponseV2(req.url, {
         icon: `${url.origin}/api/og/matchup?f1=${fighter1.username}&f2=${fighter2.username}`,
@@ -66,6 +68,11 @@ export async function GET(req: Request, res: Response) {
       headers: ACTIONS_CORS_HEADERS,
     });
   } catch (err) {
+    console.error(
+      `Error in GET request: ${
+        err instanceof Error ? err.message : String(err)
+      }`
+    );
     let message = "An unknown error occurred";
     if (err instanceof Error) {
       message = err.message;

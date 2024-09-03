@@ -15,4 +15,13 @@ export interface Match {
   lastEngagementDate: Date; // New field
 }
 
-// all votes for a match by adding fighter 1 votes and fighter 2 votes
+export interface Debate {
+  id: string;
+  topic: string;
+  debater1: string;
+  debater2: string;
+  votes_debater1: number;
+  votes_debater2: number;
+  last_blink: Date | null;
+  image_url: string;
+}
