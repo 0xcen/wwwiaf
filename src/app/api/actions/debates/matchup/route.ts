@@ -59,25 +59,26 @@ export async function GET(req: Request) {
       debate = data as Debate;
     }
 
-    const actionGetResp: ActionGetResponse = {
-      icon: `${url.origin}/api/og/debate-matchup?debateId=${debate.id}`,
-      title: `${debate.topic}`,
-      description: `${debate.debater1} vs ${debate.debater2}. Who do you think will win?`,
-      type: "action",
-      label: "Vote",
-      links: {
-        actions: [
-          {
-            label: `Vote ${debate.debater1}`,
-            href: `${url.pathname}?vote=1&debateId=${debate.id}&debater=${debate.debater1}`,
-          },
-          {
-            label: `Vote ${debate.debater2}`,
-            href: `${url.pathname}?vote=2&debateId=${debate.id}&debater=${debate.debater2}`,
-          },
-        ],
-      },
-    };
+    const actionGetResp: ActionGetResponse =
+      await blinksights.createActionGetResponseV2(req.url, {
+        icon: `${url.origin}/api/og/debate-matchup?debateId=${debate.id}`,
+        title: `${debate.topic}`,
+        description: `${debate.debater1} vs ${debate.debater2}. Who do you think will win?`,
+        type: "action",
+        label: "Vote",
+        links: {
+          actions: [
+            {
+              label: `Vote ${debate.debater1}`,
+              href: `${url.pathname}?vote=1&debateId=${debate.id}&debater=${debate.debater1}`,
+            },
+            {
+              label: `Vote ${debate.debater2}`,
+              href: `${url.pathname}?vote=2&debateId=${debate.id}&debater=${debate.debater2}`,
+            },
+          ],
+        },
+      });
 
     return NextResponse.json(actionGetResp, {
       headers: ACTIONS_CORS_HEADERS,
@@ -104,7 +105,7 @@ export const POST = async (request: Request) => {
 
     const payer = new PublicKey(requestBody.account);
     try {
-      // await blinksights.trackActionV2(requestBody.account, request.url);
+      await blinksights.trackActionV2(requestBody.account, request.url);
     } catch (err) {
       console.log(err);
     }
@@ -149,7 +150,7 @@ export const POST = async (request: Request) => {
         transaction,
         links: {
           next: {
-            action: {
+            action: await blinksights.createActionGetResponseV2(request.url, {
               icon: `${url.origin}/api/og/debate-paywall?debateId=${debateId}&vote=${vote}`,
               type: "action",
               title: `You voted for ${debater}, see what everyone else thinks!`,
@@ -167,8 +168,7 @@ export const POST = async (request: Request) => {
                   },
                 ],
               },
-            },
-
+            }),
             type: "inline",
           },
         },

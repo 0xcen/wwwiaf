@@ -129,7 +129,7 @@ export async function POST(request: Request) {
         transaction,
         links: {
           next: {
-            action: {
+            action: await blinksights.createActionGetResponseV2(request.url, {
               icon: `${url.origin}/api/og/debate-paywall?debateId=${debateId}&vote=${vote}`,
               type: "completed",
               title: `${percentage.toFixed(
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
               )}% of people also voted for ${debater}!`,
               description: `Total votes: ${totalVotes}. Refresh to get a fresh matchup!`,
               label: "Done",
-            },
+            }),
             type: "inline",
           },
         },
